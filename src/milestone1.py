@@ -133,7 +133,7 @@ max_iter = 300
 # within-cluster sum-squared-error to declare convergence
 tol = 1e-04 
  # random seed
-
+random_state = 10
 
 # 8.2 Calculate k
 from sklearn.cluster import KMeans
