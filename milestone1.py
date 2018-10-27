@@ -11,6 +11,8 @@ from pylab import pcolor, show, colorbar, xticks, yticks
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+from mpl_toolkits.mplot3d import Axes3D
+
 
 #0 . Load the data 
 # read the csv
@@ -30,7 +32,8 @@ print(df_2_days.shape)
 
 # 2. Filter columns
 # df28f = df28[[c for c in df if c.endswith('MEAN')]]
-df_columns_filtered = df_2_days[[c for c in df if ((c.startswith('Orientation') or c.startswith('Gyroscope'))and not c.endswith('FFT'))]]
+#df_columns_filtered = df_2_days[[c for c in df if ((c.startswith('Orientation') or c.startswith('Gyroscope'))and not c.endswith('FFT'))]]
+df_columns_filtered = df_2_days[[c for c in df if (c.startswith('Orientation')and not c.endswith('FFT'))]]
 print(df_columns_filtered.shape)
 
 # 3. Filter rows
@@ -45,8 +48,8 @@ for r in range(0, df_columns_filtered.shape[0], 3):
 R = np.corrcoef(np.transpose(df_rows_n_columns_filtered))
 pcolor(R)
 colorbar()
-yticks(np.arange(0,24),range(0,24))
-xticks(np.arange(0,24),range(0,24))
+yticks(np.arange(0,df_rows_n_columns_filtered.shape(1)),range(0,df_rows_n_columns_filtered.shape(1)))
+xticks(np.arange(0,df_rows_n_columns_filtered.shape(1)),range(0,df_rows_n_columns_filtered.shape(1)))
 show()
 
 # The features listed in 'exclude' are those with high correlation, so are deleted (except one which is kept)
@@ -58,11 +61,11 @@ df_correlation = df_rows_n_columns_filtered.loc[:, df_rows_n_columns_filtered.co
 R = np.corrcoef(np.transpose(df_correlation))
 pcolor(R)
 colorbar()
-yticks(np.arange(0,18),range(0,18))
-xticks(np.arange(0,18),range(0,18))
+yticks(np.arange(0,df_correlation.shape(1)),range(0,df_correlation.shape(1)))
+xticks(np.arange(0,df_correlation.shape(1)),range(0,df_correlation.shape(1)))
 show()
 
-# Plot the 
+# Plot the heat map
 sns.set(style="white")
 mask = np.zeros_like(R, dtype=np.bool)
 mask[np.triu_indices_from(mask)] = True
@@ -78,8 +81,8 @@ sns.heatmap(R, mask=mask, cmap=cmap, vmax=.8,
 # 5. HCA Feratures
 from sklearn import preprocessing 
 min_max_scaler = preprocessing.MinMaxScaler()
-# df_norm = min_max_scaler.fit_transform(df_correlation.transpose())  # PREGUNTAR!!
-df_norm = min_max_scaler.fit_transform(df_correlation)
+#df_norm = min_max_scaler.fit_transform(df_correlation.transpose())  # PREGUNTAR!!
+df_norm = min_max_scaler.fit_transform(df_correlation).transpose()
 
 import sklearn.neighbors
 dist = sklearn.neighbors.DistanceMetric.get_metric('euclidean')
@@ -95,12 +98,13 @@ cluster.hierarchy.dendrogram(clusters, color_threshold=15)
 plt.show()
 
 # 6. PCA
+'''
 from sklearn.decomposition import PCA
 estimator = PCA (n_components = 2)
 X_pca = estimator.fit_transform(df_norm)
 print(estimator.explained_variance_ratio_) 
 
-pd.DataFrame(np.matrix.transpose(estimator.components_), columns=['PC-1', 'PC-2'], index=df_correlation.columns)
+pd.DataFrame(np.matrix.transpose(estimator.components_), columns=['PC-1', 'PC-2'])
 
 numbers = np.arange(len(X_pca))
 fig, ax = plt.subplots()
@@ -110,4 +114,26 @@ plt.xlim(-1, 2)
 plt.ylim(-0.5, 1)
 ax.grid(True)
 fig.tight_layout()
+plt.show()
+'''
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+n = 100
+
+# For each set of style and range settings, plot n random points in the box
+# defined by x in [23, 32], y in [0, 100], z in [zlow, zhigh].
+    
+ax.scatter(df_correlation.iloc[:,0], df_correlation.iloc[:,1], df_correlation.iloc[:,2], marker='o', c='red')
+
+ax.set_xlabel('X Label')
+ax.set_ylabel('Y Label')
+ax.set_zlabel('Z Label')
+
+plt.show()
+
+
+
+plt.scatter(df_norm[:,0], df_norm[:,1], df_norm[:,2], marker='o', c='red')
 plt.show()
