@@ -16,7 +16,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 ########################## 1. Load the data ##################################
 # Read the csv
-df = pd.read_csv("..\Data\T2.csv")
+df = pd.read_csv(u"../Data/T2.csv")
 
 # 1. Filter days
 df['TimeStemp'] = pd.to_datetime(df['TimeStemp'])
