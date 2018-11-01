@@ -99,7 +99,6 @@ ax = fig.add_subplot(111, projection='3d')
 ax.scatter(df_norm[:,0], df_norm[:,1], df_norm[:,2], marker='o', c='red')
 plt.show()
 
-
 ########################### CALCULATE PCA ####################################
 # 7. PCA
 from sklearn.decomposition import PCA
@@ -114,18 +113,6 @@ ax = fig.add_subplot(111, projection='3d')
 ax.scatter(df_pca.iloc[:,0], df_pca.iloc[:,1], df_pca.iloc[:,2], marker='o', c='red')
 plt.show()
 
-
-''' Code that draws the PCA with two components
-numbers = np.arange(len(X_pca))
-fig, ax = plt.subplots()
-for i in range(len(X_pca)):
-    plt.text(X_pca[i][0], X_pca[i][1],'.') 
-plt.xlim(-1, 2)
-plt.ylim(-0.5, 1)
-ax.grid(True)
-fig.tight_layout()
-plt.show()
-'''
 ##############################################################################
 ############################ KMEANS PCA VALUES ###############################
 # 8. K-means 
@@ -185,7 +172,7 @@ print('Distortion: %.2f' % km.inertia_)
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')   
 ax.scatter(df_pca.iloc[:,0], df_pca.iloc[:,1], df_pca.iloc[:,2], marker='o', c=km.labels_)
-ax.scatter(km.cluster_centers_[:,0], km.cluster_centers_[:,1], km.cluster_centers_[:,2], marker='o', c='red')
+ax.scatter(km.cluster_centers_[:,0], km.cluster_centers_[:,1], km.cluster_centers_[:,2], marker='o', c='green')
 plt.show()
 
 # 9. Outliers detection (LOF)
@@ -243,7 +230,7 @@ print('Distortion: %.2f' % km.inertia_)
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')   
 ax.scatter(df_norm[:,0], df_norm[:,1], df_norm[:,2], marker='o', c=km.labels_)
-ax.scatter(km.cluster_centers_[:,0], km.cluster_centers_[:,1], km.cluster_centers_[:,2], marker='o', c='red')
+ax.scatter(km.cluster_centers_[:,0], km.cluster_centers_[:,1], km.cluster_centers_[:,2], marker='+', c='green')
 plt.show()
 
 #Outlier detection
@@ -264,11 +251,22 @@ plt.show()
 
 # Outlier deleting (store in a csv)
 rows_deleted = 0
+outliers = []
+np_correlation = df_correlation.values
+
 for s in range(0, len(X_scores)):
     if X_scores[s-rows_deleted] < -100:
+        outliers.append(df_correlation.iloc[s,:].tolist())
         df_norm = np.delete(df_norm, (s-rows_deleted), axis=0)
         X_scores = np.delete(X_scores, (s-rows_deleted), axis=0)
+        np_correlation = np.delete(np_correlation, (s-rows_deleted), axis=0)
         rows_deleted+=1
+
+outliers_to_csv = np.asarray(outliers)
+np.savetxt(u"../output/outliers_orientation.csv",
+           outliers_to_csv,
+           fmt="%f",
+           delimiter=",")
         
 # Plot results without outliers
 fig = plt.figure()
@@ -320,10 +318,26 @@ print('Distortion: %.2f' % km.inertia_)
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')   
 ax.scatter(df_norm[:,0], df_norm[:,1], df_norm[:,2], marker='o', c=km.labels_)
-ax.scatter(km.cluster_centers_[:,0], km.cluster_centers_[:,1], km.cluster_centers_[:,2], marker='o', c='red')
+ax.scatter(km.cluster_centers_[:,0], km.cluster_centers_[:,1], km.cluster_centers_[:,2], marker='+', c='green')
 plt.show()
-################################################
 
+#############################################################################
+######################## GET CLUSTERS SEPARATED #############################
+clusters_and_elements = []
+for i in range(k):
+    clusters_and_elements.append([]) #Initialize list
 
+for x in range(0, len(np_correlation)): # Separate each element in a different list 
+    clusters_and_elements[km.labels_[x]].append(np_correlation[x])
 
+for x in range(len(clusters_and_elements)): # Transform to numpy array and store in cvs
+    clusters_and_elements[x] = np.asarray(clusters_and_elements[x])
+    np.savetxt(u"../output/cluster"+str(x)+".csv",
+           clusters_and_elements[x],
+           fmt="%f",
+           delimiter=",")
+#############################################################################
 
+max(np_correlation[:,0])
+min(np_correlation[:,0])
+max(np_correlation[:,1])
