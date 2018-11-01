@@ -337,7 +337,3 @@ for x in range(len(clusters_and_elements)): # Transform to numpy array and store
            fmt="%f",
            delimiter=",")
 #############################################################################
-
-max(np_correlation[:,0])
-min(np_correlation[:,0])
-max(np_correlation[:,1])
