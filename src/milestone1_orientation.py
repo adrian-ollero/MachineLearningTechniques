@@ -336,4 +336,92 @@ for x in range(len(clusters_and_elements)): # Transform to numpy array and store
            clusters_and_elements[x],
            fmt="%f",
            delimiter=",")
+    
+    
 #############################################################################
+#############################################################################
+############################# 2D tests ######################################
+centers = km.cluster_centers_
+centers_nn = min_max_scaler.inverse_transform(centers)
+
+distortions = []
+silhouettes = []
+
+for i in range(2, 11):
+    km = KMeans(i, init, n_init = iterations ,max_iter= max_iter, tol = tol,random_state = random_state)
+    labels = km.fit_predict(np_correlation)
+    distortions.append(km.inertia_)
+    silhouettes.append(metrics.silhouette_score(np_correlation, labels))
+    
+#Draw distorsion & silhoutte
+plt.subplot(121)
+plt.plot(range(2,11), distortions, marker='o', c='blue')
+plt.xlabel('Number of clusters')
+plt.ylabel('Distorsion')
+plt.subplot(122)
+plt.plot(range(2,11), silhouettes , marker='o', c='green')
+plt.xlabel('Number of clusters')
+plt.ylabel('Silhouette')
+plt.show()
+
+k = 8 #Selected value 
+
+km = KMeans(k, init, n_init = iterations ,
+            max_iter= max_iter, tol = tol, random_state = random_state)
+
+y_km = km.fit_predict(np_correlation)
+
+from sklearn import metrics
+print("Silhouette Coefficient: %0.3f"
+      % metrics.silhouette_score(np_correlation, y_km))
+      
+print('Distortion: %.2f' % km.inertia_)
+
+#plot clusters
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')   
+ax.scatter(np_correlation[:,0], np_correlation[:,1], np_correlation[:,2], marker='o', c=km.labels_)
+ax.scatter(km.cluster_centers_[:,0], km.cluster_centers_[:,1], km.cluster_centers_[:,2], marker='+', c='green')
+plt.show()
+
+######################### Delete azimuth ################################
+df_pitch_roll = np.asarray([np_correlation[:,0], np_correlation[:,1]]).transpose()
+distortions = []
+silhouettes = []
+
+for i in range(2, 11):
+    km = KMeans(i, init, n_init = iterations ,max_iter= max_iter, tol = tol,random_state = random_state)
+    labels = km.fit_predict(df_pitch_roll)
+    distortions.append(km.inertia_)
+    silhouettes.append(metrics.silhouette_score(df_pitch_roll, labels))
+    
+#Draw distorsion & silhoutte
+plt.subplot(121)
+plt.plot(range(2,11), distortions, marker='o', c='blue')
+plt.xlabel('Number of clusters')
+plt.ylabel('Distorsion')
+plt.subplot(122)
+plt.plot(range(2,11), silhouettes , marker='o', c='green')
+plt.xlabel('Number of clusters')
+plt.ylabel('Silhouette')
+plt.show()
+
+k = 8 #Selected value 
+
+km = KMeans(k, init, n_init = iterations ,
+            max_iter= max_iter, tol = tol, random_state = random_state)
+
+y_km = km.fit_predict(df_pitch_roll)
+
+from sklearn import metrics
+print("Silhouette Coefficient: %0.3f"
+      % metrics.silhouette_score(df_pitch_roll, y_km))
+      
+print('Distortion: %.2f' % km.inertia_)
+
+#plot clusters
+fig = plt.figure()
+ax = fig.add_subplot(111)   
+ax.scatter(df_pitch_roll[:,0], df_pitch_roll[:,1], marker='o', c=km.labels_)
+ax.scatter(km.cluster_centers_[:,0], km.cluster_centers_[:,1], marker='+', c='green')
+plt.show()
