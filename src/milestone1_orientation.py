@@ -16,7 +16,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 ########################## 1. Load the data ##################################
 # Read the csv
-df = pd.read_csv(u"../Data/T2.csv")
+df = pd.read_csv(u"./Data/T2.csv")
 
 # 1. Filter days
 df['TimeStemp'] = pd.to_datetime(df['TimeStemp'])
@@ -27,7 +27,7 @@ print(df_2_days.shape)
 
 ############################### FILTER DATA ##################################
 # 2. Filter columns
-df_columns_filtered = df_2_days[[c for c in df if (c.startswith('Orientation')and not c.endswith('FFT'))]]
+df_columns_filtered = df_2_days[[c for c in df if (c.startswith('UUID') or (c.startswith('Orientation')and not c.endswith('FFT')))]]
 print(df_columns_filtered.shape)
 
 
@@ -52,7 +52,7 @@ show()
 # The features listed in 'exclude' are those with high correlation, so are deleted (except one which is kept)
 exclude = ["OrientationProbe_roll_MEDIAN", "OrientationProbe_roll_MIDDLE_SAMPLE", "OrientationProbe_pitch_MIDDLE_SAMPLE", "OrientationProbe_pitch_MEDIAN",
            "OrientationProbe_azimuth_MEDIAN", "OrientationProbe_azimuth_MIDDLE_SAMPLE"]
-df_correlation = df_rows_n_columns_filtered.loc[:, df_rows_n_columns_filtered.columns.difference(exclude)]
+df_correlation = df_columns_filtered.loc[:, df_rows_n_columns_filtered.columns.difference(exclude)]
 
 # Calculate correlation with new dataframe
 R = np.corrcoef(np.transpose(df_correlation))
@@ -61,6 +61,10 @@ colorbar()
 yticks(np.arange(0,df_correlation.shape[1]),range(0,df_correlation.shape[1]))
 xticks(np.arange(0,df_correlation.shape[1]),range(0,df_correlation.shape[1]))
 show()
+
+df_correlation_csv = df_correlation.join(df['UUID'])
+
+df_correlation.to_csv('./Data/orientation.csv', index=False)
 
 # Plot the heat map
 sns.set(style="white")
@@ -253,6 +257,7 @@ plt.show()
 rows_deleted = 0
 outliers = []
 np_correlation = df_correlation.values
+data=[]
 
 for s in range(0, len(X_scores)):
     if X_scores[s-rows_deleted] < -100:
@@ -261,13 +266,15 @@ for s in range(0, len(X_scores)):
         X_scores = np.delete(X_scores, (s-rows_deleted), axis=0)
         np_correlation = np.delete(np_correlation, (s-rows_deleted), axis=0)
         rows_deleted+=1
+    else:
+        data.append(df_correlation.iloc[s,:].tolist())
 
+        
 outliers_to_csv = np.asarray(outliers)
-np.savetxt(u"../output/outliers_orientation.csv",
+np.savetxt(u"./output/outliers_orientation.csv",
            outliers_to_csv,
            fmt="%f",
            delimiter=",")
-        
 # Plot results without outliers
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
@@ -332,7 +339,7 @@ for x in range(0, len(np_correlation)): # Separate each element in a different l
 
 for x in range(len(clusters_and_elements)): # Transform to numpy array and store in cvs
     clusters_and_elements[x] = np.asarray(clusters_and_elements[x])
-    np.savetxt(u"../output/cluster"+str(x)+".csv",
+    np.savetxt(u"./output/cluster"+str(x)+".csv",
            clusters_and_elements[x],
            fmt="%f",
            delimiter=",")
