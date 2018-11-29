@@ -33,12 +33,75 @@ for m_index,m_row in df_moriarty.iterrows():
             if (df_moriarty.loc[m_index,'UUID'] < df_sherlock.loc[s_index+1,'UUID']):
                 if df_moriarty.loc[m_index,'ActionType'] == 'malicious':
                     print("Maligno: "+ str(s_index) + " - " + str(m_index))
-                    df_sherlock.loc[s_index,'Malicious']=2
+                    df_sherlock.loc[s_index,'Malicious']=1
                 else:
                     print("Benigno: "+ str(s_index) + " - " + str(m_index))
-                    df_sherlock.loc[s_index,'Malicious']=1
                 i = s_index
                 break
         else:
             i = s_index
             break
+        
+####################### 2. Features selection ################################
+
+df_columns_filtered = df_sherlock[[c for c in df_sherlock if (c.startswith('Malicious') or (c.startswith('Orientation')and not c.endswith('FFT')))]]
+print(df_columns_filtered.shape)
+df_columns_filtered = df_columns_filtered.dropna()
+exclude = ["OrientationProbe_roll_MEDIAN", "OrientationProbe_roll_MIDDLE_SAMPLE", "OrientationProbe_pitch_MIDDLE_SAMPLE", "OrientationProbe_pitch_MEDIAN",
+           "OrientationProbe_azimuth_MEDIAN", "OrientationProbe_azimuth_MIDDLE_SAMPLE"]
+df_columns_filtered = df_columns_filtered.loc[:, df_columns_filtered.columns.difference(exclude)]
+
+
+########################## 3. Build and tone a Model #########################
+##### Reduce rows to sampling
+
+df_rows = df_columns_filtered.iloc[60000:df_columns_filtered.shape[0]]
+df_rows_test = df_columns_filtered.iloc[0:60000]
+##### Data normalization
+
+columna_malicious = df_rows['Malicious']
+columna_malicious_test = df_rows_test['Malicious']
+
+df_sin_malicious = df_rows.drop('Malicious',axis = 1)
+df_test_sin_malicious = df_rows_test.drop('Malicious',axis = 1)
+from sklearn import preprocessing 
+min_max_scaler = preprocessing.MinMaxScaler()
+df_norm = min_max_scaler.fit_transform(df_sin_malicious)
+################################ Nayve-Bayes #################################
+from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test = train_test_split(df_norm, columna_malicious, test_size=0.4)
+
+from sklearn.naive_bayes import GaussianNB
+model = GaussianNB()
+
+model.fit(df_norm,columna_malicious)
+
+y_pred = model.predict(df_test_sin_malicious)
+
+################################### KNN ######################################
+X = df_norm
+y = columna_malicious
+from matplotlib.colors import ListedColormap
+from sklearn import neighbors, datasets
+
+h = .02  # step size in the mesh
+
+# Create color maps
+n_neighbors = 15
+cmap_light = ListedColormap(['#FFAAAA', '#AAFFAA', '#AAAAFF'])
+cmap_bold = ListedColormap(['#FF0000', '#00FF00', '#0000FF'])
+
+clf = neighbors.KNeighborsClassifier(n_neighbors, weights='uniform')
+clf.fit(X, y)
+
+# Plot the decision boundary. For that, we will assign a color to each
+# point in the mesh [x_min, x_max]x[y_min, y_max].
+x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+xx, yy = np.meshgrid(np.arange(x_min, x_max, h),np.arange(y_min, y_max, h))
+Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+
+# Put the result into a color plot
+Z = Z.reshape(xx.shape)
+plt.figure()
+plt.pcolormesh(xx, yy, Z, cmap=cmap_light)
