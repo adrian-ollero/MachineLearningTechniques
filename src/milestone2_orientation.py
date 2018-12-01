@@ -81,7 +81,7 @@ print("Gaussian Naive-Bayes Results: \n"
 
 # Matriz de confusión
 
-print("Matriz de confusión:\n")
+print("Confussion Matrix:\n")
 matriz = pd.crosstab(y_test, y_pred, rownames=['actual'], colnames=['preds'])
 print(matriz)
 
@@ -95,12 +95,12 @@ y_predC = model.predict(x_test)
 ############################# METRIC RESULTS #################################
 from sklearn.metrics import classification_report
 
-print("Gaussian Naive-Bayes Results: \n" 
+print("Complement Naive-Bayes Results: \n" 
       +classification_report(y_true=y_test, y_pred=y_predC))
 
 # Matriz de confusión
 
-print("Matriz de confusión:\n")
+print("Confussion Matrix:\n")
 matriz = pd.crosstab(y_test, y_predC, rownames=['actual'], colnames=['preds'])
 print(matriz)
 
