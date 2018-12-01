@@ -36,6 +36,7 @@ for m_index,m_row in df_moriarty.iterrows():
                     df_sherlock.loc[s_index,'Malicious']=1
                 else:
                     print("Benigno: "+ str(s_index) + " - " + str(m_index))
+                    df_sherlock.loc[s_index,'Malicious']=1
                 i = s_index
                 break
         else:
@@ -45,7 +46,6 @@ for m_index,m_row in df_moriarty.iterrows():
 ####################### 2. Features selection ################################
 
 df_columns_filtered = df_sherlock[[c for c in df_sherlock if (c.startswith('Malicious') or (c.startswith('Orientation')and not c.endswith('FFT')))]]
-print(df_columns_filtered.shape)
 df_columns_filtered = df_columns_filtered.dropna()
 exclude = ["OrientationProbe_roll_MEDIAN", "OrientationProbe_roll_MIDDLE_SAMPLE", "OrientationProbe_pitch_MIDDLE_SAMPLE", "OrientationProbe_pitch_MEDIAN",
            "OrientationProbe_azimuth_MEDIAN", "OrientationProbe_azimuth_MIDDLE_SAMPLE"]
@@ -53,30 +53,32 @@ df_columns_filtered = df_columns_filtered.loc[:, df_columns_filtered.columns.dif
 
 
 ########################## 3. Build and tone a Model #########################
-##### Reduce rows to sampling
-
-df_rows = df_columns_filtered.iloc[60000:df_columns_filtered.shape[0]]
-df_rows_test = df_columns_filtered.iloc[0:60000]
 ##### Data normalization
 
-columna_malicious = df_rows['Malicious']
-columna_malicious_test = df_rows_test['Malicious']
+columna_malicious = df_columns_filtered['Malicious']
 
-df_sin_malicious = df_rows.drop('Malicious',axis = 1)
-df_test_sin_malicious = df_rows_test.drop('Malicious',axis = 1)
+df_sin_malicious = df_columns_filtered.drop('Malicious',axis = 1)
+
 from sklearn import preprocessing 
 min_max_scaler = preprocessing.MinMaxScaler()
 df_norm = min_max_scaler.fit_transform(df_sin_malicious)
-################################ Nayve-Bayes #################################
+################################ Naive-Bayes #################################
 from sklearn.model_selection import train_test_split
 x_train, x_test, y_train, y_test = train_test_split(df_norm, columna_malicious, test_size=0.4)
 
+## Gaussian
 from sklearn.naive_bayes import GaussianNB
 model = GaussianNB()
 
-model.fit(df_norm,columna_malicious)
+model.fit(x_train,y_train)
+y_predG = model.predict(x_test)
 
-y_pred = model.predict(df_test_sin_malicious)
+## Complement  #### NOT AVAILABLE IN THIS VERSION OF THE LIBRARY
+#from sklearn.naive_bayes import ComplementNB
+#model = ComplementNB()
+
+#model.fit(x_train,y_train)
+#y_predC = model.predict(x_test)
 
 ################################### KNN ######################################
 X = df_norm
