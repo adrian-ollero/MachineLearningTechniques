@@ -73,13 +73,6 @@ model = GaussianNB()
 model.fit(x_train,y_train)
 y_pred = model.predict(x_test)
 
-## Complement  #### NOT AVAILABLE IN THIS VERSION OF THE LIBRARY
-#from sklearn.naive_bayes import ComplementNB
-#model = ComplementNB()
-
-#model.fit(x_train,y_train)
-#y_predC = model.predict(x_test)
-
 ############################# METRIC RESULTS #################################
 from sklearn.metrics import classification_report
 
@@ -90,5 +83,24 @@ print("Gaussian Naive-Bayes Results: \n"
 
 print("Matriz de confusión:\n")
 matriz = pd.crosstab(y_test, y_pred, rownames=['actual'], colnames=['preds'])
+print(matriz)
+
+## Complement  #### NOT AVAILABLE UP TO VERSION 0.20.X OF SCIKIT-LEARN
+from sklearn.naive_bayes import ComplementNB
+model = ComplementNB()
+
+model.fit(x_train,y_train)
+y_predC = model.predict(x_test)
+
+############################# METRIC RESULTS #################################
+from sklearn.metrics import classification_report
+
+print("Gaussian Naive-Bayes Results: \n" 
+      +classification_report(y_true=y_test, y_pred=y_predC))
+
+# Matriz de confusión
+
+print("Matriz de confusión:\n")
+matriz = pd.crosstab(y_test, y_predC, rownames=['actual'], colnames=['preds'])
 print(matriz)
 
