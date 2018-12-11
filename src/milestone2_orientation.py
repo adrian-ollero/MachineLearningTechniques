@@ -62,9 +62,10 @@ df_sin_malicious = df_columns_filtered.drop('Malicious',axis = 1)
 from sklearn import preprocessing 
 min_max_scaler = preprocessing.MinMaxScaler()
 df_norm = min_max_scaler.fit_transform(df_sin_malicious)
-################################ Naive-Bayes #################################
+
 from sklearn.model_selection import train_test_split
 x_train, x_test, y_train, y_test = train_test_split(df_norm, columna_malicious, test_size=0.4)
+################################ Naive-Bayes #################################
 
 ## Gaussian
 from sklearn.naive_bayes import GaussianNB
@@ -105,7 +106,39 @@ matriz = pd.crosstab(y_test, y_predC, rownames=['actual'], colnames=['preds'])
 print(matriz)
 
 ################################## KNN #######################################
+from matplotlib.colors import ListedColormap
+from sklearn import neighbors, datasets
 
+X = df_norm
+y = columna_malicious
+
+h=.02
+
+n_neighbors = 15
+cmap_light = ListedColormap(['#FFAAAA', '#AAFFAA', '#AAAAFF'])
+cmap_bold = ListedColormap(['#FF0000', '#00FF00', '#0000FF'])
+clf = neighbors.KNeighborsClassifier(n_neighbors, weights='uniform')
+clf.fit(x_train, y_train)
+
+x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+xx, yy = np.meshgrid(np.arange(x_min, x_max, h),np.arange(y_min, y_max, h))
+
+
+#y_predKNN = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+y_predKNN = clf.predict(x_test)
+
+from sklearn.metrics import classification_report
+
+print("KNN Results: \n" 
+      +classification_report(y_true=y_test, y_pred=y_predKNN))
+
+# Matriz de confusión
+
+print("Confussion Matrix:\n")
+matriz = pd.crosstab(y_test, y_predKNN, rownames=['actual'], colnames=['preds'])
+print(matriz)
+##############################################################################÷
 
 ############################## CLUSTERING ####################################
 #First reduce dimensionality
@@ -184,3 +217,4 @@ df_c2 = pd.DataFrame(data = clusters_and_elements[1],index=range(0,len(clusters_
 df_c5 = pd.DataFrame(data = clusters_and_elements[4],index=range(0,len(clusters_and_elements[4])),columns=["c1","c2","c3","c4"])
 
 df_union = df_c1.append([df_c2,df_c5])
+
