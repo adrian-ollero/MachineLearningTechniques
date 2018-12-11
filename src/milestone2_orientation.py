@@ -104,11 +104,83 @@ print("Confussion Matrix:\n")
 matriz = pd.crosstab(y_test, y_predC, rownames=['actual'], colnames=['preds'])
 print(matriz)
 
-
-############################ OTROS CAMBIOS ##################################
-
 ################################## KNN #######################################
 
 
 ############################## CLUSTERING ####################################
+#First reduce dimensionality
+df_reduced = df_columns_filtered.iloc[60000:df_columns_filtered.shape[0]]
 
+from sklearn.cluster import KMeans
+from sklearn import metrics
+
+# parameters
+init = 'random' # initialization method 
+# to run 10 times with different random centroids 
+# to choose the final model as the one with the lowest SSE
+iterations = 10
+# maximum number of iterations for each single run
+max_iter = 300 
+# controls the tolerance with regard to the changes in the 
+# within-cluster sum-squared-error to declare convergence
+tol = 1e-04 
+ # random seed
+random_state = 10
+
+distortions = []
+silhouettes = []
+
+for i in range(2, 11):
+    km = KMeans(i, init, n_init = iterations ,max_iter= max_iter, tol = tol,random_state = random_state)
+    labels = km.fit_predict(df_reduced)
+    distortions.append(km.inertia_)
+    silhouettes.append(metrics.silhouette_score(df_reduced, labels))
+    
+#Draw distorsion & silhoutte
+plt.subplot(121)
+plt.plot(range(2,11), distortions, marker='o', c='blue')
+plt.xlabel('Number of clusters')
+plt.ylabel('Distorsion')
+plt.subplot(122)
+plt.plot(range(2,11), silhouettes , marker='o', c='green')
+plt.xlabel('Number of clusters')
+plt.ylabel('Silhouette')
+plt.show()
+
+k = 6
+
+km = KMeans(k, init, n_init = iterations ,
+            max_iter= max_iter, tol = tol, random_state = random_state)
+
+y_km = km.fit_predict(df_reduced)
+
+from sklearn import metrics
+print("Silhouette Coefficient: %0.3f"
+      % metrics.silhouette_score(df_reduced, y_km))
+      
+print('Distortion: %.2f' % km.inertia_)
+
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')   
+ax.scatter(df_reduced.iloc[:,0], df_reduced.iloc[:,1], df_reduced.iloc[:,2], marker='o', c=km.labels_)
+ax.scatter(km.cluster_centers_[:,0], km.cluster_centers_[:,1], km.cluster_centers_[:,2], marker='o', c='green')
+plt.show()
+
+######################## GET CLUSTERS SEPARATED #############################
+clusters_and_elements = []
+for i in range(k):
+    clusters_and_elements.append([]) #Initialize list
+
+for x in range(0, len(df_reduced)): # Separate each element in a different list 
+    clusters_and_elements[km.labels_[x]].append(df_reduced.iloc[x])
+
+for x in range(len(clusters_and_elements)): # Transform to numpy array and store in cvs
+    clusters_and_elements[x] = np.asarray(clusters_and_elements[x])
+
+c1 = clusters_and_elements[0]
+df_c1 = pd.DataFrame(data = clusters_and_elements[0],columns=["c1","c2","c3","c4"])
+df_c2 = pd.DataFrame(data = clusters_and_elements[1],index=range(0,len(clusters_and_elements[1])),columns=["c1","c2","c3","c4"])
+df_c5 = pd.DataFrame(data = clusters_and_elements[4],index=range(0,len(clusters_and_elements[4])),columns=["c1","c2","c3","c4"])
+
+df_union = df_c1.append([df_c2,df_c5])
