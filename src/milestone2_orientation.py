@@ -104,4 +104,11 @@ print("Confussion Matrix:\n")
 matriz = pd.crosstab(y_test, y_predC, rownames=['actual'], colnames=['preds'])
 print(matriz)
 
+
 ############################ OTROS CAMBIOS ##################################
+
+################################## KNN #######################################
+
+
+############################## CLUSTERING ####################################
+
