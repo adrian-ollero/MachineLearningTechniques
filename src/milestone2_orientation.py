@@ -47,12 +47,12 @@ for m_index,m_row in df_moriarty.iterrows():
 
 df_columns_filtered = df_sherlock[[c for c in df_sherlock if (c.startswith('Malicious') or (c.startswith('Orientation')and not c.endswith('FFT')))]]
 df_columns_filtered = df_columns_filtered.dropna()
-exclude = ["OrientationProbe_roll_MEDIAN", "OrientationProbe_roll_MIDDLE_SAMPLE", "OrientationProbe_pitch_MIDDLE_SAMPLE", "OrientationProbe_pitch_MEDIAN",
+exclude = ['OrientationProbe_azimuth_MEAN',"OrientationProbe_roll_MEDIAN", "OrientationProbe_roll_MIDDLE_SAMPLE", "OrientationProbe_pitch_MIDDLE_SAMPLE", "OrientationProbe_pitch_MEDIAN",
            "OrientationProbe_azimuth_MEDIAN", "OrientationProbe_azimuth_MIDDLE_SAMPLE"]
 df_columns_filtered = df_columns_filtered.loc[:, df_columns_filtered.columns.difference(exclude)]
 
 
-########################## 3. Build and tone a Model #########################
+########################## 3. Build and tune a Model #########################
 ##### Data normalization
 
 columna_malicious = df_columns_filtered['Malicious']
@@ -105,44 +105,12 @@ print("Confussion Matrix:\n")
 matriz = pd.crosstab(y_test, y_predC, rownames=['actual'], colnames=['preds'])
 print(matriz)
 
-################################## KNN #######################################
-from matplotlib.colors import ListedColormap
-from sklearn import neighbors, datasets
-
-X = df_norm
-y = columna_malicious
-
-h=.02
-
-n_neighbors = 15
-cmap_light = ListedColormap(['#FFAAAA', '#AAFFAA', '#AAAAFF'])
-cmap_bold = ListedColormap(['#FF0000', '#00FF00', '#0000FF'])
-clf = neighbors.KNeighborsClassifier(n_neighbors, weights='uniform')
-clf.fit(x_train, y_train)
-
-x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
-y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
-xx, yy = np.meshgrid(np.arange(x_min, x_max, h),np.arange(y_min, y_max, h))
-
-
-#y_predKNN = clf.predict(np.c_[xx.ravel(), yy.ravel()])
-y_predKNN = clf.predict(x_test)
-
-from sklearn.metrics import classification_report
-
-print("KNN Results: \n" 
-      +classification_report(y_true=y_test, y_pred=y_predKNN))
-
-# Matriz de confusión
-
-print("Confussion Matrix:\n")
-matriz = pd.crosstab(y_test, y_predKNN, rownames=['actual'], colnames=['preds'])
-print(matriz)
-##############################################################################÷
-
 ############################## CLUSTERING ####################################
+df_columns_filtered.to_csv('./output/features_filtered.csv', index=False)
 #First reduce dimensionality
 df_reduced = df_columns_filtered.iloc[60000:df_columns_filtered.shape[0]]
+#We drop azimuth as we considered en milestone 1 as not relevant
+#df_reduced = df_reduced.drop('OrientationProbe_azimuth_MEAN',axis=1)
 
 from sklearn.cluster import KMeans
 from sklearn import metrics
@@ -180,7 +148,7 @@ plt.xlabel('Number of clusters')
 plt.ylabel('Silhouette')
 plt.show()
 
-k = 6
+k = 8
 
 km = KMeans(k, init, n_init = iterations ,
             max_iter= max_iter, tol = tol, random_state = random_state)
@@ -211,10 +179,103 @@ for x in range(0, len(df_reduced)): # Separate each element in a different list
 for x in range(len(clusters_and_elements)): # Transform to numpy array and store in cvs
     clusters_and_elements[x] = np.asarray(clusters_and_elements[x])
 
-c1 = clusters_and_elements[0]
-df_c1 = pd.DataFrame(data = clusters_and_elements[0],columns=["c1","c2","c3","c4"])
-df_c2 = pd.DataFrame(data = clusters_and_elements[1],index=range(0,len(clusters_and_elements[1])),columns=["c1","c2","c3","c4"])
-df_c5 = pd.DataFrame(data = clusters_and_elements[4],index=range(0,len(clusters_and_elements[4])),columns=["c1","c2","c3","c4"])
+df_c3 = pd.DataFrame(data = clusters_and_elements[2],columns=["Malicious","Pitch","roll"])
+df_c2 = pd.DataFrame(data = clusters_and_elements[1],columns=["Malicious","Pitch","roll"])
+df_c7 = pd.DataFrame(data = clusters_and_elements[6],columns=["Malicious","Pitch","roll"])
 
-df_union = df_c1.append([df_c2,df_c5])
+df_union = df_c2.append(df_c3)
 
+##### Data normalization
+
+test_size = 0.4
+
+columna_malicious = df_union['Malicious']
+
+df_sin_malicious = df_union.drop('Malicious',axis = 1)
+
+from sklearn import preprocessing 
+min_max_scaler = preprocessing.MinMaxScaler()
+df_norm = min_max_scaler.fit_transform(df_sin_malicious)
+
+from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test = train_test_split(df_norm, columna_malicious, test_size=test_size)
+
+################################## KNN #######################################
+from matplotlib.colors import ListedColormap
+from sklearn import neighbors, datasets
+
+X = df_norm
+y = columna_malicious
+
+h=.02
+
+n_neighbors = 15
+#cmap_light = ListedColormap(['#FFAAAA', '#AAFFAA', '#AAAAFF'])
+#cmap_bold = ListedColormap(['#FF0000', '#00FF00', '#0000FF'])
+clf = neighbors.KNeighborsClassifier(n_neighbors, weights='uniform')
+clf.fit(x_train, y_train)
+
+#x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+#y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+#xx, yy = np.meshgrid(np.arange(x_min, x_max, h),np.arange(y_min, y_max, h))
+
+
+#y_predKNN = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+y_predKNN = clf.predict(x_test)
+
+from sklearn.metrics import classification_report
+
+print("KNN Results: \n" 
+      +classification_report(y_true=y_test, y_pred=y_predKNN))
+
+# Matriz de confusión
+
+print("Confussion Matrix:\n")
+matriz = pd.crosstab(y_test, y_predKNN, rownames=['actual'], colnames=['preds'])
+print(matriz)
+
+############################## Complement NB  ################################
+from sklearn.naive_bayes import ComplementNB
+model = ComplementNB()
+
+model.fit(x_train,y_train)
+y_predC = model.predict(x_test)
+
+############################# METRIC RESULTS #################################
+from sklearn.metrics import classification_report
+
+print("Complement Naive-Bayes Results: \n" 
+      +classification_report(y_true=y_test, y_pred=y_predC))
+
+# Matriz de confusión
+
+print("Confussion Matrix:\n")
+matriz = pd.crosstab(y_test, y_predC, rownames=['actual'], colnames=['preds'])
+print(matriz)
+
+#### Test with more data ####
+df_columns_filtered = df_columns_filtered.drop('OrientationProbe_azimuth_MEAN',axis=1)
+columna_malicious = df_columns_filtered['Malicious']
+
+df_sin_malicious = df_columns_filtered.drop('Malicious',axis = 1)
+
+from sklearn import preprocessing 
+min_max_scaler = preprocessing.MinMaxScaler()
+df_norm = min_max_scaler.fit_transform(df_sin_malicious)
+
+from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test = train_test_split(df_norm, columna_malicious, test_size=0.9)
+
+y_predC = model.predict(x_test)
+
+############################# METRIC RESULTS #################################
+from sklearn.metrics import classification_report
+
+print("Complement Naive-Bayes Results: \n" 
+      +classification_report(y_true=y_test, y_pred=y_predC))
+
+# Matriz de confusión
+
+print("Confussion Matrix:\n")
+matriz = pd.crosstab(y_test, y_predC, rownames=['actual'], colnames=['preds'])
+print(matriz)
