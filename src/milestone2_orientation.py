@@ -204,29 +204,60 @@ x_train, x_test, y_train, y_test = train_test_split(df_norm, columna_malicious, 
 from matplotlib.colors import ListedColormap
 from sklearn import neighbors, datasets
 
-X = df_norm
-y = columna_malicious
+X = x_train
+y = y_train
+
+## PARAMETRIZACIÓN
+from sklearn.model_selection import cross_val_score
+
+for i, weights in enumerate(['uniform','distance']):
+    total_scores = []
+    for n_neighbors in range(1,40):
+        knn = neighbors.KNeighborsClassifier(n_neighbors, weights = weights)
+        knn.fit(X,y)
+        scores = cross_val_score(knn, X, y, scoring = 'f1',cv = 10)
+        total_scores.append(scores.mean())
+    
+    plt.plot(range(0,len(total_scores)),total_scores,marker='o',label=weights)
+    plt.ylabel('cv score')
+
+plt.legend()
+plt.show()
+
+##############
 
 h=.02
 
-n_neighbors = 15
-#cmap_light = ListedColormap(['#FFAAAA', '#AAFFAA', '#AAAAFF'])
-#cmap_bold = ListedColormap(['#FF0000', '#00FF00', '#0000FF'])
-clf = neighbors.KNeighborsClassifier(n_neighbors, weights='uniform')
+n_neighbors = 7
+cmap_light = ListedColormap(['#FFAAAA', '#AAFFAA', '#AAAAFF'])
+cmap_bold = ListedColormap(['#FF0000', '#00FF00', '#0000FF'])
+clf = neighbors.KNeighborsClassifier(n_neighbors, weights='distance')
 clf.fit(x_train, y_train)
 
-#x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
-#y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
-#xx, yy = np.meshgrid(np.arange(x_min, x_max, h),np.arange(y_min, y_max, h))
+x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+xx, yy = np.meshgrid(np.arange(x_min, x_max, h),np.arange(y_min, y_max, h))
 
-
-#y_predKNN = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
 y_predKNN = clf.predict(x_test)
+ # Put the result into a color plot
+Z = Z.reshape(xx.shape)
+plt.figure()
+plt.pcolormesh(xx, yy, Z, cmap=cmap_light)
+
+# Plot also the training points
+plt.scatter(X[:, 0], X[:, 1], c=y, cmap=cmap_bold,
+            edgecolor='k', s=20)
+plt.xlim(xx.min(), xx.max())
+plt.ylim(yy.min(), yy.max())
+plt.title("2-Class classification (k = %i, weights = '%s')"
+              % (n_neighbors, weights))
+
+plt.show()
 
 from sklearn.metrics import classification_report
 
-print("KNN Results: \n" 
-      +classification_report(y_true=y_test, y_pred=y_predKNN))
+print("KNN Results: \n" + classification_report(y_true=y_test, y_pred=y_predKNN))
 
 # Matriz de confusión
 
@@ -235,37 +266,13 @@ matriz = pd.crosstab(y_test, y_predKNN, rownames=['actual'], colnames=['preds'])
 print(matriz)
 
 ############################## Complement NB  ################################
+from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test = train_test_split(df_norm, columna_malicious, test_size=test_size)
+
 from sklearn.naive_bayes import ComplementNB
 model = ComplementNB()
 
 model.fit(x_train,y_train)
-y_predC = model.predict(x_test)
-
-############################# METRIC RESULTS #################################
-from sklearn.metrics import classification_report
-
-print("Complement Naive-Bayes Results: \n" 
-      +classification_report(y_true=y_test, y_pred=y_predC))
-
-# Matriz de confusión
-
-print("Confussion Matrix:\n")
-matriz = pd.crosstab(y_test, y_predC, rownames=['actual'], colnames=['preds'])
-print(matriz)
-
-#### Test with more data ####
-df_columns_filtered = df_columns_filtered.drop('OrientationProbe_azimuth_MEAN',axis=1)
-columna_malicious = df_columns_filtered['Malicious']
-
-df_sin_malicious = df_columns_filtered.drop('Malicious',axis = 1)
-
-from sklearn import preprocessing 
-min_max_scaler = preprocessing.MinMaxScaler()
-df_norm = min_max_scaler.fit_transform(df_sin_malicious)
-
-from sklearn.model_selection import train_test_split
-x_train, x_test, y_train, y_test = train_test_split(df_norm, columna_malicious, test_size=0.9)
-
 y_predC = model.predict(x_test)
 
 ############################# METRIC RESULTS #################################
