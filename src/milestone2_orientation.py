@@ -107,6 +107,7 @@ print(matriz)
 
 ############################## CLUSTERING ####################################
 df_columns_filtered.to_csv('./output/features_filtered.csv', index=False)
+df_columns_filtered = pd.read_csv('./output/features_filtered.csv')
 #First reduce dimensionality
 df_reduced = df_columns_filtered.iloc[60000:df_columns_filtered.shape[0]]
 #We drop azimuth as we considered en milestone 1 as not relevant
@@ -181,7 +182,6 @@ for x in range(len(clusters_and_elements)): # Transform to numpy array and store
 
 df_c3 = pd.DataFrame(data = clusters_and_elements[2],columns=["Malicious","Pitch","roll"])
 df_c2 = pd.DataFrame(data = clusters_and_elements[1],columns=["Malicious","Pitch","roll"])
-df_c7 = pd.DataFrame(data = clusters_and_elements[6],columns=["Malicious","Pitch","roll"])
 
 df_union = df_c2.append(df_c3)
 
@@ -212,7 +212,7 @@ from sklearn.model_selection import cross_val_score
 
 for i, weights in enumerate(['uniform','distance']):
     total_scores = []
-    for n_neighbors in range(1,40):
+    for n_neighbors in range(1,20):
         knn = neighbors.KNeighborsClassifier(n_neighbors, weights = weights)
         knn.fit(X,y)
         scores = cross_val_score(knn, X, y, scoring = 'f1',cv = 10)
